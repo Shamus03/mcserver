@@ -133,6 +133,7 @@ case $command in
             cd $world
             ln -f -s $FILES/minecraft_server.jar minecraft_server.jar
             ln -f -s $FILES/LoginMessage.txt LoginMessage.txt
+            ln -f -s $FILES/beep.sh beep.sh
             echo "Links recreated."
             exit 0
         else
