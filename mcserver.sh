@@ -10,12 +10,13 @@
 #   3   -   User cancelled operation.
 #   4   -   Script reached somewhere it shouldn't.  Should not happen.
 
-export SERVER_MAIN=/mcserver
+export SERVER_MAIN=/home/shamus03/mcserver
 
 export FILES=$SERVER_MAIN/files
 export WORLDS=$SERVER_MAIN/worlds
 export SERVER_FOLDER=$SERVER_MAIN/server_folder
 export PROCESS_PREFIX=mcserver
+export SERVER_NAME_PREFIX="[Bloated Orange]"
 cd $WORLDS
 
 command=$1
@@ -57,8 +58,7 @@ case $command in
                 screen -x $PROCESS_PREFIX-$world -p 1 -X kill
                 screen -x $PROCESS_PREFIX-$world -p 0 -X stuff `printf "stop\r"`
                 screen -x $PROCESS_PREFIX-$world -p 0
-                echo "Server successfully stopped." >> \
-                    $WORLDS/$world/server.log
+                echo "Server successfully stopped." >> $world/server.log
                 echo "Server \"$world\" stopped."
                 exit 0
             else
@@ -124,6 +124,22 @@ case $command in
             exit 1
         fi
         ;;
+    relink)
+        world=$2
+        while [ -z $world ]; do
+            read -p "Server to relink: " -e world
+        done
+        if [ -d $world ]; then
+            cd $world
+            ln -f -s $FILES/minecraft_server.jar minecraft_server.jar
+            ln -f -s $FILES/LoginMessage.txt LoginMessage.txt
+            echo "Links recreated."
+            exit 0
+        else
+            echo "No world match found."
+            exit 1
+        fi
+        ;;
     folder)
         world=$2
         while [ -z $world ]; do
@@ -161,11 +177,12 @@ case $command in
         else
             cp -R $SERVER_FOLDER $world_to_create
             cd $world_to_create
-            ln -s $FILES/minecraft_server.jar minecraft_server.jar
-            ln -s $FILES/LoginMessage.txt LoginMessage.txt
+            mcserver relink $world_to_create > /dev/null
             perl -pi -e "s/level-name=.*/level-name=$world_to_create/g" \
                 server.properties
-            perl -pi -e "s/motd=.*/motd=$world_to_create/g" server.properties
+            perl -pi -e \
+                "s/motd=.*/motd=$SERVER_NAME_PREFIX$world_to_create/g" \
+                server.properties
             echo "World \"$world_to_create\" created."
             exit 0
         fi
@@ -296,6 +313,7 @@ stop                            Stops a server.
 restart                         Restarts a server.
 connect                         Connects to an already running server's console.
 edit                            Edits a server's properties.
+relink                          Recreates symbolic links for files.
 folder                          Opens a server's folder.
 worlds                          Opens the folder containing all the servers.
 servermain                      Opens the main server folder.
